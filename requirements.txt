@@ -1,0 +1,21 @@
+# Project: Automated Trading System PoC
+# Description: Requirements for the three core microservices: Data Collector, Signal Service, and Execution Service.
+
+# --- Data Collector Service Dependencies ---
+ccxt==4.1.90
+pandas==2.2.1
+python-dotenv==1.0.1
+
+# --- Signal Service Dependencies ---
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pandas==2.2.1
+
+# --- Execution Service Dependencies ---
+requests==2.31.0
+ccxt==4.1.90
+python-dotenv==1.0.1
+schedule==1.2.1
+
+# --- Shared / Development Dependencies ---
+python-multipart==0.0.6

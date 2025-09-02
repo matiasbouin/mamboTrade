@@ -1,0 +1,43 @@
+# Define a named volume for persistent data
+volumes:
+  shared_data: {}
+
+services:
+  # Service 1: Data Collector - runs once to initialize data
+  data-collector:
+    build: 
+      context: .
+      dockerfile: data_collector/Dockerfile
+    container_name: mambo-data-collector
+    volumes:
+      - shared_data:/app/shared_data  # Mount volume to container
+    # This service runs once and exits
+    restart: "no"
+
+  # Service 2: Signal Service (API)
+  signal-service:
+    build:
+      context: .
+      dockerfile: signal_service/Dockerfile
+    container_name: mambo-signal-service
+    volumes:
+      - shared_data:/app/shared_data  # Same volume for data access
+    ports:
+      - "8000:8000"  # Expose API to host machine
+    depends_on:
+      - data-collector  # Wait for data collector to complete
+    restart: unless-stopped
+
+  # Service 3: Execution Service
+  execution-service:
+    build:
+      context: .
+      dockerfile: execution_service/Dockerfile
+    container_name: mambo-execution-service
+    env_file:
+      - .env  # Load environment variables from file
+    volumes:
+      - shared_data:/app/shared_data
+    depends_on:
+      - signal-service  # Wait for API to be available
+    restart: unless-stopped
