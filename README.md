@@ -1,4 +1,4 @@
-# Automated Trading System – From PoC to Scalable Fintech Product
+# Mambo Trade - Automated Trading System – From PoC to Scalable Fintech Product
 
 ## 📌 Project Overview
 This project starts as a **Proof of Concept (PoC)** for an automated trading system and evolves toward a **scalable, commercial fintech platform**.  
