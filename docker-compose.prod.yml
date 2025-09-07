@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  data-collector:
+    build:
+      context: .
+      dockerfile: data_collector/Dockerfile.prod
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mambotrade-data-collector:latest
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+
+  signal-service:
+    build:
+      context: .
+      dockerfile: signal_service/Dockerfile.prod
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mambotrade-signal-service:latest
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+
+  execution-service:
+    build:
+      context: .
+      dockerfile: execution_service/Dockerfile.prod
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mambotrade-execution-service:latest
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - SIGNAL_SERVICE_URL=http://signal-service:8000

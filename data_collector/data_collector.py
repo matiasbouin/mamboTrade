@@ -1,11 +1,11 @@
 import ccxt
 import pandas as pd
-import sqlite3
+import psycopg2
 import os
 from datetime import datetime
 
 def fetch_ohlcv_data():
-    """Fetches OHLCV data from Binance and saves to CSV and SQLite."""
+    """Fetches OHLCV data from Binance and saves to CSV and PostgreSQL."""
     
     # 1. Initialize the exchange instance
     exchange = ccxt.binance()
@@ -33,15 +33,56 @@ def fetch_ohlcv_data():
     df.to_csv(csv_filename, index=False)
     print(f"Data saved to {csv_filename}")
     
-    # 6. Save to SQLite database
-    db_filename = os.path.join(data_dir, 'trading_data.db')
-    conn = sqlite3.connect(db_filename)
-    df.to_sql('price_data', conn, if_exists='replace', index=False) # 'replace' for simplicity in PoC
-    conn.close()
-    print(f"Data saved to database {db_filename}")
+    # 6. Save to PostgreSQL database
+    save_to_postgres(df)
     
     print("Data collection complete!")
     return df
+
+def save_to_postgres(df):
+    """Saves DataFrame to PostgreSQL database."""
+    try:
+        conn = psycopg2.connect(
+            host=os.getenv('DB_HOST'),
+            database=os.getenv('DB_NAME'),
+            user=os.getenv('DB_USER'),
+            password=os.getenv('DB_PASSWORD'),
+            port=os.getenv('DB_PORT', '5432')  # Default PostgreSQL port
+        )
+        
+        # Create table if not exists
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS price_data (
+                    timestamp TIMESTAMP PRIMARY KEY,
+                    open FLOAT,
+                    high FLOAT,
+                    low FLOAT,
+                    close FLOAT,
+                    volume FLOAT
+                )
+            """)
+        
+        # Insert data
+        for _, row in df.iterrows():
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO price_data (timestamp, open, high, low, close, volume)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (timestamp) DO NOTHING
+                """, (row['timestamp'], row['open'], row['high'], 
+                      row['low'], row['close'], row['volume']))
+        
+        conn.commit()
+        print(f"Data saved to PostgreSQL database {os.getenv('DB_NAME')}")
+        
+    except Exception as e:
+        print(f"Error saving to PostgreSQL: {e}")
+        # You might want to raise the exception or handle it differently
+        raise
+    finally:
+        if conn:
+            conn.close()
 
 if __name__ == "__main__":
     fetch_ohlcv_data()
